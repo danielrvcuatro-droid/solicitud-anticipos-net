@@ -11,6 +11,7 @@ public sealed class IngestaSolicitudService : IIngestaSolicitudService
 {
     private readonly ISolicitudRepository _solicitudes;
     private readonly IMatrizAprobacionRepository _matrizAprobacion;
+    private readonly IAlmacenamientoAdjuntos _almacenamientoAdjuntos;
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _timeProvider;
     private readonly ConfiguracionAprobacion _configuracion;
@@ -18,12 +19,14 @@ public sealed class IngestaSolicitudService : IIngestaSolicitudService
     public IngestaSolicitudService(
         ISolicitudRepository solicitudes,
         IMatrizAprobacionRepository matrizAprobacion,
+        IAlmacenamientoAdjuntos almacenamientoAdjuntos,
         IUnitOfWork unitOfWork,
         TimeProvider timeProvider,
         IOptions<ConfiguracionAprobacion> configuracion)
     {
         _solicitudes = solicitudes;
         _matrizAprobacion = matrizAprobacion;
+        _almacenamientoAdjuntos = almacenamientoAdjuntos;
         _unitOfWork = unitOfWork;
         _timeProvider = timeProvider;
         _configuracion = configuracion.Value;
@@ -52,9 +55,18 @@ public sealed class IngestaSolicitudService : IIngestaSolicitudService
             request.ModoAprobacion,
             ahora);
 
+        // Cada solicitud sube sus adjuntos a su propia subcarpeta (su Id, ya asignado por
+        // Solicitud.Crear) para que el nombre original del archivo no colisione con el de otra
+        // solicitud ni se tenga que ensuciar con un prefijo aleatorio.
+        var carpetaAdjuntos = solicitud.Id.ToString();
+
         foreach (var adjunto in request.Adjuntos ?? [])
         {
-            solicitud.AgregarAdjunto(adjunto.NombreArchivo, adjunto.UrlSharePoint, adjunto.TipoContenido ?? "application/octet-stream", ahora);
+            var tipoContenido = adjunto.TipoContenido ?? "application/octet-stream";
+            var contenido = Convert.FromBase64String(adjunto.ContenidoBase64);
+            var urlSharePoint = await _almacenamientoAdjuntos.SubirAsync(carpetaAdjuntos, adjunto.NombreArchivo, contenido, tipoContenido, cancellationToken);
+
+            solicitud.AgregarAdjunto(adjunto.NombreArchivo, urlSharePoint, tipoContenido, ahora);
         }
 
         var filasMatriz = await _matrizAprobacion.ObtenerPorDepartamentoAsync(request.Departamento, cancellationToken);

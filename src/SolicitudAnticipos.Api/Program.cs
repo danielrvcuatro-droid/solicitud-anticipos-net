@@ -15,6 +15,8 @@ builder.Services.AddSwaggerGen();
 
 // DbContext + repositorios contra Supabase (ver ConnectionStrings:Supabase más abajo).
 builder.Services.AddInfrastructure(builder.Configuration);
+// Subida de adjuntos a SharePoint vía Microsoft Graph (ver la sección SharePoint más abajo).
+builder.Services.AddSharePoint(builder.Configuration);
 builder.Services.Configure<ConfiguracionAprobacion>(builder.Configuration.GetSection(ConfiguracionAprobacion.Seccion));
 builder.Services.AddSingleton(TimeProvider.System);
 builder.Services.AddScoped<IIngestaSolicitudService, IngestaSolicitudService>();

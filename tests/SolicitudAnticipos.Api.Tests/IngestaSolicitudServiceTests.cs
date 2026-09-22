@@ -15,8 +15,9 @@ public sealed class IngestaSolicitudServiceTests
         SolicitudRepositoryFalso solicitudes,
         MatrizAprobacionRepositoryFalso matriz,
         UnitOfWorkFalso unitOfWork,
+        AlmacenamientoAdjuntosFalso? almacenamientoAdjuntos = null,
         int plazoPorPasoHoras = 48) =>
-        new(solicitudes, matriz, unitOfWork, TimeProvider.System,
+        new(solicitudes, matriz, almacenamientoAdjuntos ?? new AlmacenamientoAdjuntosFalso(), unitOfWork, TimeProvider.System,
             Options.Create(new ConfiguracionAprobacion { PlazoPorPasoHoras = plazoPorPasoHoras }));
 
     private static IngestarSolicitudRequest CrearRequest(
@@ -74,24 +75,36 @@ public sealed class IngestaSolicitudServiceTests
     }
 
     [Fact]
-    public async Task Agrega_los_adjuntos_recibidos_del_flujo_de_automate()
+    public async Task Sube_los_adjuntos_a_SharePoint_y_los_agrega_con_la_url_resultante()
     {
         var solicitudes = new SolicitudRepositoryFalso();
         var matriz = new MatrizAprobacionRepositoryFalso(new[]
         {
             MatrizAprobacion.Crear("Desarrollos", 1, 1, "gerente@rvcuatro.com", "Gerente de Área"),
         });
-        var servicio = CrearServicio(solicitudes, matriz, new UnitOfWorkFalso());
+        var almacenamiento = new AlmacenamientoAdjuntosFalso();
+        var servicio = CrearServicio(solicitudes, matriz, new UnitOfWorkFalso(), almacenamiento);
 
+        var contenidoOriginal = "contenido de prueba"u8.ToArray();
         var adjuntos = new List<AdjuntoRequest>
         {
-            new("factura.pdf", "https://rvcuatro.sharepoint.com/factura.pdf", "application/pdf"),
+            new("factura.pdf", Convert.ToBase64String(contenidoOriginal), "application/pdf"),
         };
 
         var solicitud = await servicio.IngestarAsync(CrearRequest(adjuntos: adjuntos));
 
+        // El servicio debió llamar al almacenamiento con el contenido ya decodificado, subiéndolo
+        // a la carpeta de esta solicitud (su Id) para que el nombre no colisione con el de otra...
+        Assert.Single(almacenamiento.ArchivosSubidos);
+        var archivoSubido = almacenamiento.ArchivosSubidos.Single();
+        Assert.Equal(contenidoOriginal, archivoSubido.Contenido);
+        Assert.Equal(solicitud.Id.ToString(), archivoSubido.Carpeta);
+
+        // ...y guardar el adjunto de la solicitud con la URL que ese almacenamiento devolvió (no con el base64).
         Assert.Single(solicitud.Adjuntos);
-        Assert.Equal("factura.pdf", solicitud.Adjuntos.Single().NombreArchivo);
+        var adjunto = solicitud.Adjuntos.Single();
+        Assert.Equal("factura.pdf", adjunto.NombreArchivo);
+        Assert.Equal($"https://rvcuatro.sharepoint.com/sites/falso/{solicitud.Id}/factura.pdf", adjunto.UrlSharePoint);
     }
 
     [Fact]
