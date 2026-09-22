@@ -42,8 +42,10 @@ public sealed class IngestaSolicitudService : IIngestaSolicitudService
         }
 
         var ahora = _timeProvider.GetUtcNow();
+        var numero = await _solicitudes.ObtenerSiguienteNumeroAsync(cancellationToken);
 
         var solicitud = Solicitud.Crear(
+            numero,
             request.FormsResponseId,
             request.SolicitanteEmail,
             request.SolicitanteNombre,
@@ -55,10 +57,11 @@ public sealed class IngestaSolicitudService : IIngestaSolicitudService
             request.ModoAprobacion,
             ahora);
 
-        // Cada solicitud sube sus adjuntos a su propia subcarpeta (su Id, ya asignado por
-        // Solicitud.Crear) para que el nombre original del archivo no colisione con el de otra
-        // solicitud ni se tenga que ensuciar con un prefijo aleatorio.
-        var carpetaAdjuntos = solicitud.Id.ToString();
+        // Cada solicitud sube sus adjuntos a su propia subcarpeta (nombrada con su número legible,
+        // no con su Id/GUID interno) para que el nombre original del archivo no colisione con el
+        // de otra solicitud, no se ensucie con un prefijo aleatorio, y sea reconocible para las
+        // personas que naveguen SharePoint directamente.
+        var carpetaAdjuntos = $"Documentos - No. {solicitud.Numero}";
 
         foreach (var adjunto in request.Adjuntos ?? [])
         {

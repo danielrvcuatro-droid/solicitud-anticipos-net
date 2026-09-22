@@ -10,8 +10,14 @@ namespace SolicitudAnticipos.Api.Tests.Falsos;
 internal sealed class SolicitudRepositoryFalso : ISolicitudRepository
 {
     private readonly List<Solicitud> _solicitudes = new();
+    private int _siguienteNumero;
 
     public int VecesAgregado { get; private set; }
+
+    public SolicitudRepositoryFalso(int numeroInicial = 1)
+    {
+        _siguienteNumero = numeroInicial;
+    }
 
     public Task<Solicitud?> ObtenerPorIdAsync(Guid id, CancellationToken cancellationToken = default) =>
         Task.FromResult(_solicitudes.SingleOrDefault(s => s.Id == id));
@@ -24,6 +30,9 @@ internal sealed class SolicitudRepositoryFalso : ISolicitudRepository
 
     public Task<IReadOnlyList<Solicitud>> ObtenerConPasosVencidosAsync(DateTimeOffset ahora, CancellationToken cancellationToken = default) =>
         Task.FromResult<IReadOnlyList<Solicitud>>(Array.Empty<Solicitud>());
+
+    public Task<int> ObtenerSiguienteNumeroAsync(CancellationToken cancellationToken = default) =>
+        Task.FromResult(_siguienteNumero++);
 
     public void Agregar(Solicitud solicitud)
     {

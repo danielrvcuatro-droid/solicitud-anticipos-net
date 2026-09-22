@@ -17,6 +17,14 @@ public sealed class Solicitud
 
     public Guid Id { get; private set; }
 
+    /// <summary>
+    /// Número secuencial y legible de la solicitud (distinto del <see cref="Id"/>, que es un GUID
+    /// interno). Se usa para mostrarlo a las personas y para nombrar la carpeta de adjuntos en
+    /// SharePoint (p. ej. "Documentos - No. 1006"), generado por una secuencia de Postgres antes
+    /// de crear la solicitud (ver <see cref="Abstracciones.ISolicitudRepository.ObtenerSiguienteNumeroAsync"/>).
+    /// </summary>
+    public int Numero { get; private set; }
+
     /// <summary>Id de la respuesta de Microsoft Forms que originó la solicitud (trazabilidad con el origen).</summary>
     public string FormsResponseId { get; private set; }
 
@@ -51,6 +59,7 @@ public sealed class Solicitud
     }
 
     public static Solicitud Crear(
+        int numero,
         string formsResponseId,
         string solicitanteEmail,
         string solicitanteNombre,
@@ -62,6 +71,11 @@ public sealed class Solicitud
         ModoAprobacion modoAprobacion,
         DateTimeOffset ahora)
     {
+        if (numero <= 0)
+        {
+            throw new SolicitudDomainException("El número de solicitud debe ser mayor a cero.");
+        }
+
         if (string.IsNullOrWhiteSpace(formsResponseId))
         {
             throw new SolicitudDomainException("FormsResponseId es requerido (trazabilidad con el formulario de origen).");
@@ -80,6 +94,7 @@ public sealed class Solicitud
         var solicitud = new Solicitud
         {
             Id = Guid.NewGuid(),
+            Numero = numero,
             FormsResponseId = formsResponseId,
             SolicitanteEmail = solicitanteEmail,
             SolicitanteNombre = solicitanteNombre,

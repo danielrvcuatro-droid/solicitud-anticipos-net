@@ -19,5 +19,12 @@ public interface ISolicitudRepository
     /// <summary>Pasos pendientes cuya fecha límite ya pasó (para que el Worker los marque como vencidos).</summary>
     Task<IReadOnlyList<Solicitud>> ObtenerConPasosVencidosAsync(DateTimeOffset ahora, CancellationToken cancellationToken = default);
 
+    /// <summary>
+    /// Siguiente número secuencial y legible para una nueva solicitud (ver <see cref="Solicitud.Numero"/>).
+    /// Se pide ANTES de crear la solicitud, para poder usarlo al nombrar su carpeta de adjuntos en
+    /// SharePoint desde el primer momento.
+    /// </summary>
+    Task<int> ObtenerSiguienteNumeroAsync(CancellationToken cancellationToken = default);
+
     void Agregar(Solicitud solicitud);
 }

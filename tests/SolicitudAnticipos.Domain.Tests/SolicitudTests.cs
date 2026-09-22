@@ -12,6 +12,7 @@ public class SolicitudTests
 
     private static Entities.Solicitud CrearSolicitudDePrueba(bool esUrgente = false, bool incluyeAnalistaFinanciero = false, ModoAprobacion modo = ModoAprobacion.Secuencial) =>
         Entities.Solicitud.Crear(
+            numero: 1,
             formsResponseId: "resp-123",
             solicitanteEmail: "colaborador@rvcuatro.com",
             solicitanteNombre: "Colaborador de Prueba",
@@ -37,7 +38,7 @@ public class SolicitudTests
     public void Crear_rechaza_monto_invalido()
     {
         var excepcion = Assert.Throws<SolicitudDomainException>(() =>
-            Entities.Solicitud.Crear("resp-1", "a@rvcuatro.com", "A", "RVCUATRO", "Desarrollos", 0m, false, false, ModoAprobacion.Secuencial, Ahora));
+            Entities.Solicitud.Crear(1, "resp-1", "a@rvcuatro.com", "A", "RVCUATRO", "Desarrollos", 0m, false, false, ModoAprobacion.Secuencial, Ahora));
 
         Assert.Contains("mayor a cero", excepcion.Message);
     }

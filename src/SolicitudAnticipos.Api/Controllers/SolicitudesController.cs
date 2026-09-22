@@ -50,5 +50,5 @@ public sealed class SolicitudesController : ControllerBase
     }
 
     private static SolicitudResponse AMapear(Solicitud solicitud) =>
-        new(solicitud.Id, solicitud.FormsResponseId, solicitud.Estado.ToString(), solicitud.Pasos.Count);
+        new(solicitud.Id, solicitud.Numero, solicitud.FormsResponseId, solicitud.Estado.ToString(), solicitud.Pasos.Count);
 }

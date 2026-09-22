@@ -29,5 +29,12 @@ public sealed class SolicitudRepository : ISolicitudRepository
             .Where(s => s.Pasos.Any(p => p.Estado == EstadoPasoAprobacion.Pendiente && p.FechaLimite != null && p.FechaLimite < ahora))
             .ToListAsync(cancellationToken);
 
+    // nextval() avanza la secuencia de Postgres de forma atómica (segura ante solicitudes
+    // concurrentes) sin necesitar guardar la solicitud primero para conocer su número.
+    public async Task<int> ObtenerSiguienteNumeroAsync(CancellationToken cancellationToken = default) =>
+        (int)await _dbContext.Database
+            .SqlQueryRaw<long>("SELECT nextval('solicitudes_numero_seq') AS \"Value\"")
+            .SingleAsync(cancellationToken);
+
     public void Agregar(Solicitud solicitud) => _dbContext.Solicitudes.Add(solicitud);
 }
