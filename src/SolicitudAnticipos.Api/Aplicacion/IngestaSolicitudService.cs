@@ -12,6 +12,7 @@ public sealed class IngestaSolicitudService : IIngestaSolicitudService
     private readonly ISolicitudRepository _solicitudes;
     private readonly IMatrizAprobacionRepository _matrizAprobacion;
     private readonly IAlmacenamientoAdjuntos _almacenamientoAdjuntos;
+    private readonly INotificadorAprobaciones _notificadorAprobaciones;
     private readonly IUnitOfWork _unitOfWork;
     private readonly TimeProvider _timeProvider;
     private readonly ConfiguracionAprobacion _configuracion;
@@ -20,6 +21,7 @@ public sealed class IngestaSolicitudService : IIngestaSolicitudService
         ISolicitudRepository solicitudes,
         IMatrizAprobacionRepository matrizAprobacion,
         IAlmacenamientoAdjuntos almacenamientoAdjuntos,
+        INotificadorAprobaciones notificadorAprobaciones,
         IUnitOfWork unitOfWork,
         TimeProvider timeProvider,
         IOptions<ConfiguracionAprobacion> configuracion)
@@ -27,6 +29,7 @@ public sealed class IngestaSolicitudService : IIngestaSolicitudService
         _solicitudes = solicitudes;
         _matrizAprobacion = matrizAprobacion;
         _almacenamientoAdjuntos = almacenamientoAdjuntos;
+        _notificadorAprobaciones = notificadorAprobaciones;
         _unitOfWork = unitOfWork;
         _timeProvider = timeProvider;
         _configuracion = configuracion.Value;
@@ -80,6 +83,15 @@ public sealed class IngestaSolicitudService : IIngestaSolicitudService
 
         _solicitudes.Agregar(solicitud);
         await _unitOfWork.GuardarCambiosAsync(cancellationToken);
+
+        // Recién ahora que ya quedó guardada: por cada paso que IniciarAprobacion activó, avisarle
+        // por correo al aprobador (ver GraphNotificadorAprobaciones). Si el envío de un correo
+        // fallara, mejor que reviente aquí -después de guardar- a que la solicitud ni siquiera
+        // quede persistida por un problema de Graph que no tiene nada que ver con la solicitud en sí.
+        foreach (var paso in solicitud.ObtenerPasosPendientesDeNotificar())
+        {
+            await _notificadorAprobaciones.NotificarPasoPendienteAsync(solicitud, paso, cancellationToken);
+        }
 
         return solicitud;
     }
