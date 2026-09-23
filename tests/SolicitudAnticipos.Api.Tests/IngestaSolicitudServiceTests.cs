@@ -54,6 +54,7 @@ public sealed class IngestaSolicitudServiceTests
         Assert.Equal(EstadoSolicitud.EnAprobacion, solicitud.Estado);
         Assert.Single(solicitud.Pasos); // se excluyó la fila del analista financiero
         Assert.Equal("gerente@rvcuatro.com", solicitud.Pasos.Single().AprobadorEmail);
+        Assert.True(solicitud.Numero > 0); // se pidió a la "secuencia" antes de crear la solicitud
         Assert.Equal(1, unitOfWork.VecesGuardado);
         Assert.Equal(1, solicitudes.VecesAgregado);
     }
@@ -94,17 +95,19 @@ public sealed class IngestaSolicitudServiceTests
         var solicitud = await servicio.IngestarAsync(CrearRequest(adjuntos: adjuntos));
 
         // El servicio debió llamar al almacenamiento con el contenido ya decodificado, subiéndolo
-        // a la carpeta de esta solicitud (su Id) para que el nombre no colisione con el de otra...
+        // a la carpeta de esta solicitud (su número legible, no su Id/GUID) para que el nombre no
+        // colisione con el de otra solicitud y sea reconocible en SharePoint...
+        var carpetaEsperada = $"Documentos - No. {solicitud.Numero}";
         Assert.Single(almacenamiento.ArchivosSubidos);
         var archivoSubido = almacenamiento.ArchivosSubidos.Single();
         Assert.Equal(contenidoOriginal, archivoSubido.Contenido);
-        Assert.Equal(solicitud.Id.ToString(), archivoSubido.Carpeta);
+        Assert.Equal(carpetaEsperada, archivoSubido.Carpeta);
 
         // ...y guardar el adjunto de la solicitud con la URL que ese almacenamiento devolvió (no con el base64).
         Assert.Single(solicitud.Adjuntos);
         var adjunto = solicitud.Adjuntos.Single();
         Assert.Equal("factura.pdf", adjunto.NombreArchivo);
-        Assert.Equal($"https://rvcuatro.sharepoint.com/sites/falso/{solicitud.Id}/factura.pdf", adjunto.UrlSharePoint);
+        Assert.Equal($"https://rvcuatro.sharepoint.com/sites/falso/{carpetaEsperada}/factura.pdf", adjunto.UrlSharePoint);
     }
 
     [Fact]

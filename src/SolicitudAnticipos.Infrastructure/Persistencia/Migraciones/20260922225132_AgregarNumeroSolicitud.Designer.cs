@@ -2,6 +2,7 @@
 using System;
 using Microsoft.EntityFrameworkCore;
 using Microsoft.EntityFrameworkCore.Infrastructure;
+using Microsoft.EntityFrameworkCore.Migrations;
 using Microsoft.EntityFrameworkCore.Storage.ValueConversion;
 using Npgsql.EntityFrameworkCore.PostgreSQL.Metadata;
 using SolicitudAnticipos.Infrastructure.Persistencia;
@@ -11,9 +12,11 @@ using SolicitudAnticipos.Infrastructure.Persistencia;
 namespace SolicitudAnticipos.Infrastructure.Persistencia.Migraciones
 {
     [DbContext(typeof(SolicitudAnticiposDbContext))]
-    partial class SolicitudAnticiposDbContextModelSnapshot : ModelSnapshot
+    [Migration("20260922225132_AgregarNumeroSolicitud")]
+    partial class AgregarNumeroSolicitud
     {
-        protected override void BuildModel(ModelBuilder modelBuilder)
+        /// <inheritdoc />
+        protected override void BuildTargetModel(ModelBuilder modelBuilder)
         {
 #pragma warning disable 612, 618
             modelBuilder

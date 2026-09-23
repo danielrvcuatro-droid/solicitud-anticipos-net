@@ -16,6 +16,12 @@ public sealed class SolicitudConfiguration : IEntityTypeConfiguration<Solicitud>
         builder.Property(s => s.FormsResponseId).IsRequired().HasMaxLength(200);
         builder.HasIndex(s => s.FormsResponseId).IsUnique();
 
+        // Se genera explícitamente desde la app (ObtenerSiguienteNumeroAsync, vía la secuencia de
+        // Postgres "solicitudes_numero_seq" creada en la migración), no por la columna en sí:
+        // ValueGeneratedNever para que EF Core siempre mande el valor que ya trae la entidad.
+        builder.Property(s => s.Numero).ValueGeneratedNever();
+        builder.HasIndex(s => s.Numero).IsUnique();
+
         builder.Property(s => s.SolicitanteEmail).IsRequired().HasMaxLength(320);
         builder.Property(s => s.SolicitanteNombre).HasMaxLength(200);
         builder.Property(s => s.Sociedad).IsRequired().HasMaxLength(100);

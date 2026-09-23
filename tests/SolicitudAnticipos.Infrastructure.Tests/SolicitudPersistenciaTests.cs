@@ -37,6 +37,7 @@ public sealed class SolicitudPersistenciaTests : IDisposable
     {
         var ahora = DateTimeOffset.UtcNow;
         var solicitud = Domain.Entities.Solicitud.Crear(
+            numero: 1,
             formsResponseId: "resp-abc-123",
             solicitanteEmail: "colaborador@rvcuatro.com",
             solicitanteNombre: "Colaborador de Prueba",
@@ -83,7 +84,7 @@ public sealed class SolicitudPersistenciaTests : IDisposable
     {
         var ahora = DateTimeOffset.UtcNow;
         var solicitud = Domain.Entities.Solicitud.Crear(
-            "resp-xyz", "colaborador@rvcuatro.com", "Colaborador", "RVCUATRO", "Corporativo",
+            2, "resp-xyz", "colaborador@rvcuatro.com", "Colaborador", "RVCUATRO", "Corporativo",
             1000m, esUrgente: false, incluyeAnalistaFinanciero: false, ModoAprobacion.Secuencial, ahora);
 
         solicitud.IniciarAprobacion(
